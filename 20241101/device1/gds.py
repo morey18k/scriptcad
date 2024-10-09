@@ -3,17 +3,17 @@ from functools import partial
 
 if __name__ == "__main__":
     c = gf.Component()
-    w = gf.components.array(partial(gf.c.straight, cross_section = "metal_routing_small", width = 1), columns=1, rows=5, spacing=(5, 5))
+    w = gf.components.array(partial(gf.c.straight, cross_section = "metal_routing_small", width = 1), columns=1, rows=10, spacing=(5, 5))
     left = c << w
 
     wleft = gf.components.array(partial(gf.c.straight, cross_section = "metal_routing_small", width = 1), columns=1, rows=5, spacing=(5, 5))
     lefter = c << wleft
 
-    d = gf.components.array(partial(gf.c.straight, cross_section = "metal_routing", width = 1), columns=1, rows=5, spacing=(80, 80))
+    d = gf.components.array(partial(gf.c.straight, cross_section = "metal_routing", width = 1), columns=1, rows=10, spacing=(80, 80))
     right = c << d
     
     
-    right.dmove((300, -150))
+    right.dmove((300, -320))
 
     lefter.dmove((-300, 0))
 

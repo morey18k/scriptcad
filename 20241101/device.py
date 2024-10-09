@@ -21,7 +21,9 @@ class params1():
     island_sizeX = 0.6
     island_sizeY = 1
     qpcwidth = 0.3
-    dot_length = 1.6
+    dot_length = 2
+    finegatewidth = 0.1
+    gate_separation = 10
 
 p1 =  params1()
 
