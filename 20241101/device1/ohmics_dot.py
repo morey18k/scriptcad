@@ -132,12 +132,12 @@ def make_ohmics_1(um, p):
     ohm_region.insert(amark.transformed(db.ICplxTrans.new(1, 0, False, -xpos*um,  ypos*um)))
     ohm_region.insert(amark.transformed(db.ICplxTrans.new(1, 0, False, -xpos*um, -ypos*um)))
 
-    return ohm_region.merged()
+    return ohm_region.merged().moved(p.centerx*um, p.centery*um)
 
 def make_island_1(um, p):
     island_region = db.Region()
     island_box = db.Box(p.island_sizeX*um, p.island_sizeY*um)
     island_region.insert(island_box)
     island_region.round_corners(0.1*um, 0.1*um, 64)
-    return island_region
+    return island_region.moved(p.centerx*um, p.centery*um)
     

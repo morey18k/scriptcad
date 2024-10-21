@@ -1,30 +1,25 @@
 import gdsfactory as gf
 from functools import partial
+import klayout.db as db
 
 if __name__ == "__main__":
-    c = gf.Component()
-    w = gf.components.array(partial(gf.c.straight, cross_section = "metal_routing_small", width = 1), columns=1, rows=10, spacing=(5, 5))
-    left = c << w
-
-    wleft = gf.components.array(partial(gf.c.straight, cross_section = "metal_routing_small", width = 1), columns=1, rows=5, spacing=(5, 5))
-    lefter = c << wleft
-
-    d = gf.components.array(partial(gf.c.straight, cross_section = "metal_routing", width = 1), columns=1, rows=10, spacing=(80, 80))
-    right = c << d
+    c = gf.Component()    
+    w1 = gf.c.straight(length = 2, cross_section = "metal_routing", layer = 'M3')
+    top = c << w1
+    middle = c << w1
+    bottom = c << w1
+    top.dmove((0, 10))
+    bottom.dmove((0, -10))
     
-    
-    right.dmove((300, -320))
+    rtop = c << w1
+    rmiddle = c << w1
+    rbottom = c << w1
+    rtop.dmove((200, 200))
+    rmiddle.dmove((200, 0))
+    rbottom.dmove((200, -200))
 
-    lefter.dmove((-300, 0))
-
-    obstacle = gf.components.rectangle(size=(300, 10))
-    obstacle1 = c << obstacle
-    obstacle2 = c << obstacle
-    obstacle1.dymin = 70
-    obstacle2.dxmin = 150
-
-    ports1 = left.ports.filter(orientation=0)
-    ports2 = right.ports.filter(orientation=180)
+    ports1 = top.ports.filter(orientation=0) + middle.ports.filter(orientation=0) + bottom.ports.filter(orientation=0)
+    ports2 = rtop.ports.filter(orientation=180) + rmiddle.ports.filter(orientation=180) + rbottom.ports.filter(orientation=180)
 
     routes = gf.routing.route_bundle(
         c,
@@ -33,7 +28,24 @@ if __name__ == "__main__":
         separation = 10,
         allow_width_mismatch = True,
         route_width = 1.0,
-        cross_section = "metal_routing_small",
-        waypoints = [(200, 20), (220, 20)]
+        cross_section = "metal_routing",
+        waypoints = [(100, 5), (120, 5)]
     )
-    c.show()
+    
+    rgn = db.Region(c.get_polygons()[23])
+
+    layout = db.Layout(True)
+    layout.read("/Users/karnamorey/Google Drive/Shared drives/GGG GDrive/"
+                "QDots-2/HMIAChipDesign/scriptcad/20241101/other_bar.gds")
+
+    top = layout.cell("TOP")
+    um = 1e3
+
+    cgates = layout.layer(5, 0)
+
+    top.shapes(cgates).insert(rgn)
+    layout.write("/Users/karnamorey/Google Drive/Shared drives/GGG GDrive/"
+             "QDots-2/HMIAChipDesign/scriptcad/20241101/other_bar.gds")
+
+
+   

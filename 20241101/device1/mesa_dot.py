@@ -152,8 +152,19 @@ def make_mesa_1(um, p):
 
     mesa_region += dcn.transformed(
                             db.ICplxTrans.new(1, theta, False, -centerx*um, -centery*um))
+    
+    pad = db.Box(1.01*p.gatepadwidth*um, 1.01*p.gatepadheight*um)
 
-    return mesa_region.merged()
+    
+    mesa_region.insert(pad.moved(p.gatepadx*um, p.gatepady*um))
+    mesa_region.insert(pad.moved(p.gatepadx*um, 0))
+    mesa_region.insert(pad.moved(p.gatepadx*um, -p.gatepady*um))
+    mesa_region.insert(pad.moved(-p.gatepadx*um, p.gatepady*um))
+    mesa_region.insert(pad.moved(-p.gatepadx*um, 0))
+    mesa_region.insert(pad.moved(-p.gatepadx*um, -p.gatepady*um))
+
+
+    return (mesa_region.merged().moved(p.centerx*um, p.centery*um))
 
 
 def make_mesaf_1(um, p):
@@ -173,4 +184,4 @@ def make_mesaf_1(um, p):
     region.insert(trenchaddon.transformed(db.ICplxTrans.new(1, 0, False, -0.2*trenchlength*um, 0)))
     region.insert(trenchaddon.transformed(db.ICplxTrans.new(1, 0, False,  0.2*trenchlength*um, 0)))
 
-    return region.merged()
+    return region.merged().moved(p.centerx*um, p.centery*um)
