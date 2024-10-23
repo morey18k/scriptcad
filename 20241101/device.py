@@ -1,7 +1,10 @@
 import klayout.db as db
 import klayout.lib
 import math
-from device1.device1 import create_device_1
+from hallBar.hallBar import create_hallBar
+from hybridDot.hybridDot import create_hybridDot
+from semiconductorDot.semiconductorDot import create_semiconductorDot
+from bowtie.bowtie import create_bowtie
 from alignment import make_global_alignment, rectangle_insert
 
 chipsize = 5000
@@ -69,11 +72,39 @@ class params2():
     gatepadx = 0.9*dohmicsx
     gatepady = (1/3)*device_height
 
+class params3():
+    angle = 0
+    centerx = 0
+    centery = 0
+    dohmicsy = 220
+    dohmicsx = 400
+    padsize = 150
+    cronSize = 5
+    h_connector = 15
+
+    wHallbar = 100
+    lHallbar = 450
+    w_connector = 35
+    h_tcn = 0.85*dohmicsy
+    w_dcn = 90
+
+    island_sizeX = 0.6
+    island_sizeY = 1
+    qpcwidth = 0.3
+    dot_length = 10
+    finegatewidth = 0.1
+    coursegatewidth = 2
+    gate_separation = 14
+
+    device_height = (3*dohmicsy+padsize+2*cronSize)
+    
+    gatepadwidth = 0.6*padsize
+    gatepadheight = device_height/3.2
+    gatepadx = 0.9*dohmicsx
+    gatepady = (1/3)*device_height
+
 
 um = 1e3
-
-p1 =  params1()
-p2 =  params2()
 
 align = db.LayerInfo(1, 0)
 mesaPos = db.LayerInfo(2, 0)
@@ -88,8 +119,9 @@ cgates = db.LayerInfo(5, 0)
 mlayout = db.Layout(True)
 top = mlayout.create_cell("TOP")
 
-device_params = [p1, p2]
-device_centers = [(0,0), (850, 0)]
+device_params = [params1(), params2(), params1(), params2(), params1(), params3()]
+device_funcs = [create_hybridDot, create_hybridDot, create_hallBar, create_hallBar, create_semiconductorDot, create_bowtie]
+device_centers = [(0,0), (850, 0), (-850, 0), (0, -850), (0, 850), (850, 850)]
 
 for k, p in enumerate(device_params):
     p.centerx = device_centers[k][0]
@@ -97,11 +129,9 @@ for k, p in enumerate(device_params):
 
 layers = [align, mesaPos, ohmics, mesaNeg, island, fgates, cgates]
 
-layout1 = create_device_1(p1, um)
-layout2 = create_device_1(p2, um)
 
 
-device_layouts = [layout1, layout2]
+device_layouts = [device_funcs[k](device_params[k], um) for k in range(len(device_params))]
 
 align_layer = mlayout.layer(align)
 ohmics_layer = mlayout.layer(ohmics)
@@ -143,3 +173,7 @@ for layerinfo in layers:
 
 mlayout.write("/Users/karnamorey/Google Drive/Shared drives/GGG GDrive/"
              "QDots-2/HMIAChipDesign/scriptcad/20241101/device.gds")
+
+for k, layout in enumerate(device_layouts):
+    layout.write(f"/Users/karnamorey/Google Drive/Shared drives/GGG GDrive/"
+             "QDots-2/HMIAChipDesign/scriptcad/20241101/device{k}.gds")
