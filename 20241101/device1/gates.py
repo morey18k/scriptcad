@@ -50,7 +50,7 @@ def create_finegates(um, p):
     finegates_region.insert(path1.transformed(db.ICplxTrans.new(1, 0, True, 0, 0)))
     finegates_region.insert(path1.transformed(db.ICplxTrans.new(1, 180, False, 0, 0)))
     finegates_region.insert(path1.transformed(db.ICplxTrans.new(1, 180, True, 0, 0)))
-    return finegates_region.merged()
+    return finegates_region.merged().transformed((db.ICplxTrans(1, p.angle, False, p.centerx*um, p.centery*um)))
 
 
 def create_gatepads(um, p):
@@ -142,4 +142,4 @@ def create_gatepads(um, p):
     
     fanout = db.Region(c.get_polygons()[23])
 
-    return  (gatepads_rgn+ cgate_rgn + fanout).merged().moved(p.centerx*um, p.centery*um)
+    return  (gatepads_rgn+ cgate_rgn + fanout).merged().transformed((db.ICplxTrans(1, p.angle, False, p.centerx*um, p.centery*um)))

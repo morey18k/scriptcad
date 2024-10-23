@@ -164,7 +164,7 @@ def make_mesa_1(um, p):
     mesa_region.insert(pad.moved(-p.gatepadx*um, -p.gatepady*um))
 
 
-    return (mesa_region.merged().moved(p.centerx*um, p.centery*um))
+    return (mesa_region.merged().transformed((db.ICplxTrans(1, p.angle, False, p.centerx*um, p.centery*um))))
 
 
 def make_mesaf_1(um, p):
@@ -184,4 +184,4 @@ def make_mesaf_1(um, p):
     region.insert(trenchaddon.transformed(db.ICplxTrans.new(1, 0, False, -0.2*trenchlength*um, 0)))
     region.insert(trenchaddon.transformed(db.ICplxTrans.new(1, 0, False,  0.2*trenchlength*um, 0)))
 
-    return region.merged().moved(p.centerx*um, p.centery*um)
+    return region.merged().transformed((db.ICplxTrans(1, p.angle, False, p.centerx*um, p.centery*um)))
