@@ -92,16 +92,16 @@ def make_mesa_1(um, p):
 
 
     mesa_region += connector.transformed(
-                            db.ICplxTrans.new(1, 0, False, -centerC*um, 0.5*p.dohmicsy*um))
+                            db.ICplxTrans.new(1, 0, False, -centerC*um, p.connectorY*um))
 
     mesa_region += connector.transformed(
-                            db.ICplxTrans.new(1, 0, False, centerC*um, 0.5*p.dohmicsy*um))
+                            db.ICplxTrans.new(1, 0, False, centerC*um, p.connectorY*um))
 
     mesa_region += connector.transformed(
-                            db.ICplxTrans.new(1, 0, False, centerC*um, -0.5*p.dohmicsy*um))
+                            db.ICplxTrans.new(1, 0, False, centerC*um, -p.connectorY*um))
 
     mesa_region += connector.transformed(
-                            db.ICplxTrans.new(1, 0, False, -centerC*um, -0.5*p.dohmicsy*um))
+                            db.ICplxTrans.new(1, 0, False, -centerC*um, -p.connectorY*um))
 
 
 

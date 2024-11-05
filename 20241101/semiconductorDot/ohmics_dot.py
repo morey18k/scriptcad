@@ -61,16 +61,16 @@ def make_ohmics_1(um, p):
 
 
     ohm_region += connector.transformed(
-                            db.ICplxTrans.new(1, 0, False, -centerC*um, 0.5*p.dohmicsy*um))
+                            db.ICplxTrans.new(1, 0, False, -centerC*um, p.connectorY*um))
 
     ohm_region += connector.transformed(
-                            db.ICplxTrans.new(1, 0, False, centerC*um, 0.5*p.dohmicsy*um))
+                            db.ICplxTrans.new(1, 0, False, centerC*um, p.connectorY*um))
 
     ohm_region += connector.transformed(
-                            db.ICplxTrans.new(1, 0, False, centerC*um, -0.5*p.dohmicsy*um))
+                            db.ICplxTrans.new(1, 0, False, centerC*um, -p.connectorY*um))
 
     ohm_region += connector.transformed(
-                            db.ICplxTrans.new(1, 0, False, -centerC*um, -0.5*p.dohmicsy*um))
+                            db.ICplxTrans.new(1, 0, False, -centerC*um, -p.connectorY*um))
 
 
 

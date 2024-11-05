@@ -177,11 +177,35 @@ def make_mesaf_1(um, p):
     region.insert(other.transformed(db.ICplxTrans.new(1, 0, False, 0, 0)))
     region.insert(other.transformed(db.ICplxTrans.new(1, 180, False, 0, 0)))
     
+
+    poly_narrow= db.Polygon([(0.3*p.island_sizeX*um, 2*p.island_sizeY*um), (0.3*p.island_sizeX*um, -2*p.island_sizeY*um), (0.5*trenchlength*um, -8*p.island_sizeY*um), (0.5*trenchlength*um, 8*p.island_sizeY*um)])
     trench = db.Box((trenchlength+2)*um, 0.12*um)
-    region.insert(trench)
+    #region.insert(trench)
+    region.insert(poly_narrow)
+    region.insert(poly_narrow.transformed(db.ICplxTrans.new(1, 180, False, 0, 0)))
 
     trenchaddon = db.Box(0.12*um, 0.32*um)
-    region.insert(trenchaddon.transformed(db.ICplxTrans.new(1, 0, False, -0.2*trenchlength*um, 0)))
-    region.insert(trenchaddon.transformed(db.ICplxTrans.new(1, 0, False,  0.2*trenchlength*um, 0)))
+    #region.insert(trenchaddon.transformed(db.ICplxTrans.new(1, 0, False, -0.2*trenchlength*um, 0)))
+    #region.insert(trenchaddon.transformed(db.ICplxTrans.new(1, 0, False,  0.2*trenchlength*um, 0)))
 
+    return region.merged().transformed((db.ICplxTrans(1, p.angle, False, p.centerx*um, p.centery*um)))
+
+
+def make_mesaf_2(um, p):
+
+    trenchlength = 0.0075*p.wHallbar
+
+    if p.small_island:
+        trenchlength = 0.003*p.wHallbar
+
+    region = db.Region()
+    #other = db.Polygon([((-0.5*p.wHallbar-1)*um, -0.25*p.dohmicsy*um), ((-0.5*p.wHallbar-1)*um, 0.25*p.dohmicsy*um), (-0.5*trenchlength*um, 0.03*p.dohmicsy*um), (-0.5*trenchlength*um, -0.03*p.dohmicsy*um)])
+    #region.insert(other.transformed(db.ICplxTrans.new(1, 0, False, 0, 0)))
+    #region.insert(other.transformed(db.ICplxTrans.new(1, 180, False, 0, 0)))
+    
+    trench = db.Box((trenchlength)*um, trenchlength*um)
+    region.insert(trench)
+    #trenchaddon = db.Box(0.12*um, 0.32*um)
+    #region.insert(trenchaddon.transformed(db.ICplxTrans.new(1, 0, False, -0.2*trenchlength*um, 0)))
+    #region.insert(trenchaddon.transformed(db.ICplxTrans.new(1, 0, False,  0.2*trenchlength*um, 0)))
     return region.merged().transformed((db.ICplxTrans(1, p.angle, False, p.centerx*um, p.centery*um)))

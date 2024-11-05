@@ -15,6 +15,17 @@ def make_ohmics_1(um, p):
     ohm_region = db.Region()
 
 
+    ohm_pad = db.Box(0.95*p.gatepadwidth*um, 0.95*p.gatepadheight*um)
+
+    ohm_region.insert(ohm_pad.moved(p.gatepadx*um, 0))
+
+    ipath_small = db.Path([db.Point((0.5*p.gate_separation-1)*um, 0*um), db.Point((p.gate_separation)*um, 0*um)], width = 0.5*p.coursegatewidth*um)
+
+    ipath_large = db.Path([db.Point((p.gate_separation-1)*um, 0*um), db.Point(p.gatepadx*um, 0*um)], width = p.coursegatewidth*um)
+
+    ohm_region.insert(ipath_small)
+    ohm_region.insert(ipath_large)
+
     ohm_region += region.transformed(
                                 db.ICplxTrans.new(1, 0, False, 0.5*p.dohmicsx*um, -1.5*p.dohmicsy*um))
     ohm_region += region.transformed(
@@ -57,7 +68,6 @@ def make_ohmics_1(um, p):
 
 
     connector = db.Box((rightend-leftend)*um, (p.h_connector+2*p.cronSize)*um)
-
 
 
     ohm_region += connector.transformed(
@@ -139,5 +149,9 @@ def make_island_1(um, p):
     island_box = db.Box(p.island_sizeX*um, p.island_sizeY*um)
     island_region.insert(island_box)
     island_region.round_corners(0.1*um, 0.1*um, 64)
-    return island_region.transformed((db.ICplxTrans(1, p.angle, False, p.centerx*um, p.centery*um)))
+
+    ipath = db.Path([db.Point(0*um, 0*um), db.Point(0.5*p.gate_separation*um, 0*um)], width = p.finegatewidth*um)
+
+    island_region.insert(ipath)
+    return island_region.merged().transformed((db.ICplxTrans(1, p.angle, False, p.centerx*um, p.centery*um)))
     

@@ -16,7 +16,7 @@ def create_qpc(widthqpc, height_gate = 0.1, length_gate = 0.2, um = 1e3):
 
 def create_finegates(um, p):
     finegates_region = db.Region()
-    lgate= 1*p.island_sizeX
+    lgate= 1.3*p.island_sizeX
     qpc_instance = create_qpc(p.qpcwidth, height_gate = p.finegatewidth, length_gate= lgate)
 
     finegates_region += qpc_instance.transformed(db.ICplxTrans.new(1, 0, False, 0, 0.5*p.dot_length*um))
@@ -24,7 +24,7 @@ def create_finegates(um, p):
     
     vlr = db.Region()
 
-    vl1height = 0.30*p.dot_length
+    vl1height = p.vl1height
     vertical_line1 = db.Box(p.finegatewidth*um, vl1height*um)
     vlr.insert(vertical_line1)
     vlr.round_corners(0.1*um, 0.1*um, 32)
