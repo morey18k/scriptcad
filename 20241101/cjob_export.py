@@ -27,7 +27,7 @@ mark4 = (xflat+50, yflat-90)
 for k in range(16):
     string+=f"""      <pattern name="20241101_HMIAII4_pdgdottest_device{k}.gpf">
         <position coord="0,0"/>
-        <beam defocus="#0" name="1na_200.beam_100" dose="850"/>
+        <beam defocus="#0" name="2na_200.beam_100" dose="650"/>
         <marker enabled="true" name="prvn_pos5">
           <markerlist>
             <position coord="{mark1[0][k]},{mark1[1][k]}"/>
@@ -43,7 +43,10 @@ for k in range(16):
           </markerlist>
         </marker>
       </pattern>\n"""
-    
+string+=f"""      <pattern name="20241101_HMIAII4_pdgdottest_device16.gpf">
+        <position coord="0,0"/>
+        <beam defocus="#0" name="2na_200.beam_100" dose="650"/>
+      </pattern>\n"""
 string+= """<marker enabled="true" name="kmorey_pos20">
         <markerlist>
           <position coord="-1850,-1700"/>
