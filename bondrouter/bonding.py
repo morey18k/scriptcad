@@ -11,6 +11,38 @@ class BondPlanInit():
     pad_y = []
     xcenter = []
     ycenter = []
+    rect_centers = []
+    rect_sizes= []
+    width = []
+    height =[]
+    anchorx  = []
+    anchory = []
+
+
+def save_snapshot(bonds, bo, num, make_image = False):
+    if make_image == False:
+        return
+    fig, ax = plt.subplots()
+
+    rect = patches.Rectangle((-3400, -3150), 6800, 6300, linewidth=0.5, edgecolor='k', facecolor='none')
+    ax.add_patch(rect)
+    ax.set_xlim(-4500, 4500)
+    ax.set_ylim(-4500, 4500)
+    ax.set_aspect('equal')
+
+
+    for k in range(48):
+        rect = patches.Rectangle((bo.anchorx[k], bo.anchory[k]), bo.width[k], bo.height[k], linewidth=1, edgecolor='r', facecolor='none')
+        #ax.text(anchorx[k], anchory[k], k)
+        ax.add_patch(rect)
+
+    for k in range(len(bonds)):
+        ax.plot([bo.xcenter[k], bo.pad_x[bonds[k]]], [bo.ycenter[k], bo.pad_y[bonds[k]]], color = 'k', linewidth = 0.5)
+        #ax.text(bo.pad_x[k], bo.pad_y[k], k)
+    
+    fig.savefig(f'plots/{num}.png', dpi=600)
+    plt.close(fig)
+
 
 def mini_intersection(mini_permute):
     out = np.zeros((len(mini_permute), len(mini_permute)))
@@ -155,7 +187,10 @@ def do_segments_intersect_once(p1, p2, p3, p4):
     # 2) If not collinear, we get exactly one intersection for standard crossing
     return True
 
-rect_centers = [
+bo = BondPlanInit()
+
+
+bo.rect_centers = [
     ("path263", (446.145705, 365.142885)),
     ("path265", (446.145705, 153.404605)),
     ("path267", (446.145705, 47.262023)),
@@ -205,7 +240,7 @@ rect_centers = [
     ("path372", (224.444535, 20.742495)),
     ("path373", (400.786335, 20.742495))]
 
-rect_sizes = [
+bo.rect_sizes = [
     ("path263",  (20.75781,  11.63671)),
     ("path265",  (20.75781,  11.51953)),
     ("path267",  (20.75781,  11.64063)),
@@ -257,135 +292,178 @@ rect_sizes = [
 
 fig, ax = plt.subplots()
 
-order = [12, 43, 44, 45, 13, 46, 17, 14, 15, 16, 18, 47, 2,
+ordering = [12, 43, 44, 45, 13, 46, 17, 14, 15, 16, 18, 47, 2,
          27, 24, 23, 1, 26, 25, 22, 21, 20, 0, 19, 6,37, 38, 39,
          7, 41, 10, 8, 9, 40, 11, 42, 3, 28, 29, 30, 4, 34, 35, 
          31, 32, 33, 5, 36]
 
+
+rolling = 0
+make_image = False
+
+order = np.roll(ordering, rolling)
+
+
+bigrectsize = np.array([340.59167, 317.31366])
+bigrectcenter = np.array([235.427007, 213.822003])
+
+bo.xcenter = 6800*(np.array([element[1][0] for element in bo.rect_centers])[order]-bigrectcenter[0])/bigrectsize[0]
+bo.ycenter = 6300*(np.array([element[1][1] for element in bo.rect_centers])[order]-bigrectcenter[1])/bigrectsize[1]
+
+
+bo.width = (6800/bigrectsize[0])*np.array([element[1][0] for element in bo.rect_sizes])[order]
+bo.height = (6300/bigrectsize[1])*np.array([element[1][1] for element in bo.rect_sizes])[order]
+
+bo.anchorx = bo.xcenter - 0.5*bo.width
+bo.anchory = bo.ycenter - 0.5*bo.height
+
+bigrectanchor = -0.5*bigrectsize
+
+
+
+
+ly = db.Layout()
+ly.read("bonding.gds")
+
+shapes = ly.top_cell().shapes(ly.layer(db.LayerInfo(0, 0)))
+
+factor = 1e3
+bo.pad_x = np.array([shape.bbox().center().x/factor for shape in shapes.each()])
+bo.pad_y = np.array([shape.bbox().center().y/factor for shape in shapes.each()])
+
 rect = patches.Rectangle((-3400, -3150), 6800, 6300, linewidth=0.5, edgecolor='k', facecolor='none')
 ax.add_patch(rect)
+ax.set_xlim(-4500, 4500)
+ax.set_ylim(-4500, 4500)
+ax.set_aspect('equal')
 
-out_bonds = []
-num_crossings = []
+for k in range(48):
+    rect = patches.Rectangle((bo.anchorx[k], bo.anchory[k]), bo.width[k], bo.height[k], linewidth=1, edgecolor='r', facecolor='none')
+    #ax.text(anchorx[k], anchory[k], k)
+    ax.add_patch(rect)
 
-for rolling in range(48):
-    order = np.roll(order, rolling)
+    #ax.text(bo.pad_x[k], bo.pad_y[k], k)
 
-    bo = BondPlanInit()
+distance_matrix = np.array([[distance(i, j, bo) for i in range(48)] for j in range(48)])
 
-    bigrectsize = np.array([340.59167, 317.31366])
-    bigrectcenter = np.array([235.427007, 213.822003])
+plot_count = 0
+bonds = []
+nmax = 48
+for k in range(nmax):
+    pad_min_index = np.argmin(distance_matrix[k])
+    
+    distance_matrix[k, :] = np.inf
+    distance_matrix[:, pad_min_index] = np.inf
 
-    bo.xcenter = 6800*(np.array([element[1][0] for element in rect_centers])[order]-bigrectcenter[0])/bigrectsize[0]
-    bo.ycenter = 6300*(np.array([element[1][1] for element in rect_centers])[order]-bigrectcenter[1])/bigrectsize[1]
+    intersections = []
+    for carrier_index in range(len(bonds)):
+        p1 = (bo.xcenter[k], bo.ycenter[k])
+        p2 = (bo.pad_x[pad_min_index], bo.pad_y[pad_min_index])
+        p3 = (bo.xcenter[carrier_index], bo.ycenter[carrier_index])
+        p4 = (bo.pad_x[bonds[carrier_index]], bo.pad_y[bonds[carrier_index]])
 
+        intersections.append(do_segments_intersect_once(p1, p2, p3, p4))
+    
+    temp = 0
+    intersect_array_0 = np.array(intersections)
 
-    width = (6800/bigrectsize[0])*np.array([element[1][0] for element in rect_sizes])[order]
-    height = (6300/bigrectsize[1])*np.array([element[1][1] for element in rect_sizes])[order]
-
-    anchorx = bo.xcenter - 0.5*width
-    anchory = bo.ycenter - 0.5*height
-
-    bigrectanchor = -0.5*bigrectsize
-
-
-
-    ax.set_xlim(-4500, 4500)
-    ax.set_ylim(-4500, 4500)
-    plt.axis('equal')
-
-    ly = db.Layout()
-    ly.read("bonding.gds")
-
-    shapes = ly.top_cell().shapes(ly.layer(db.LayerInfo(0, 0)))
-
-    factor = 1e3
-    bo.pad_x = np.array([shape.bbox().center().x/factor for shape in shapes.each()])
-    bo.pad_y = np.array([shape.bbox().center().y/factor for shape in shapes.each()])
-
-    for k in range(48):
-        rect = patches.Rectangle((anchorx[k], anchory[k]), width[k], height[k], linewidth=1, edgecolor='r', facecolor='none')
-        ax.text(anchorx[k], anchory[k], k)
-        ax.add_patch(rect)
-
-        ax.text(bo.pad_x[k], bo.pad_y[k], k)
-
-    distance_matrix = np.array([[distance(i, j, bo) for i in range(48)] for j in range(48)])
-
-    bonds = []
-    nmax = 48
-    for k in range(nmax):
-        pad_min_index = np.argmin(distance_matrix[k])
-        
-        distance_matrix[k, :] = np.inf
-        distance_matrix[:, pad_min_index] = np.inf
-
-        intersections = []
+    old_sum = 100
+    print(np.sum(intersect_array_0), end = " ")
+    if np.sum(intersect_array_0) == 1:
+        if np.sum(intersect_array_0)==old_sum:
+            break
+        conflict_bond = np.argmax(intersect_array_0)
+        temp = pad_min_index
+        pad_min_index = bonds[conflict_bond]
+        bonds[conflict_bond] = temp
+    
+        intersections_new = []
         for carrier_index in range(len(bonds)):
             p1 = (bo.xcenter[k], bo.ycenter[k])
             p2 = (bo.pad_x[pad_min_index], bo.pad_y[pad_min_index])
             p3 = (bo.xcenter[carrier_index], bo.ycenter[carrier_index])
             p4 = (bo.pad_x[bonds[carrier_index]], bo.pad_y[bonds[carrier_index]])
 
-            intersections.append(do_segments_intersect_once(p1, p2, p3, p4))
-        
-        temp = 0
-        intersect_array_0 = np.array(intersections)
-
-        old_sum = 100
+        intersections_new.append(do_segments_intersect_once(p1, p2, p3, p4))
+        old_sum = np.sum(intersect_array_0)
+        intersect_array_0 = np.array(intersections_new)
         print(np.sum(intersect_array_0), end = " ")
-        if np.sum(intersect_array_0) == 1:
-            if np.sum(intersect_array_0)==old_sum:
-                break
-            conflict_bond = np.argmax(intersect_array_0)
-            temp = pad_min_index
-            pad_min_index = bonds[conflict_bond]
-            bonds[conflict_bond] = temp
-        
-            intersections_new = []
-            for carrier_index in range(len(bonds)):
-                p1 = (bo.xcenter[k], bo.ycenter[k])
-                p2 = (bo.pad_x[pad_min_index], bo.pad_y[pad_min_index])
-                p3 = (bo.xcenter[carrier_index], bo.ycenter[carrier_index])
-                p4 = (bo.pad_x[bonds[carrier_index]], bo.pad_y[bonds[carrier_index]])
+    print("")
 
-            intersections_new.append(do_segments_intersect_once(p1, p2, p3, p4))
-            old_sum = np.sum(intersect_array_0)
-            intersect_array_0 = np.array(intersections_new)
-            print(np.sum(intersect_array_0), end = " ")
-        print("")
+    #print(intersections_new)
+    bonds.append(pad_min_index)
+    save_snapshot(bonds, bo, plot_count, make_image= make_image)
+    plot_count += 1
 
-        #print(intersections_new)
-        bonds.append(pad_min_index)
+    new_intersect = np.zeros(len(intersect_array_0)+1)
+    new_intersect[0:len(intersect_array_0)] = intersect_array_0
+    new_intersect[len(intersect_array_0)] = 1
 
-        new_intersect = np.zeros(len(intersect_array_0)+1)
-        new_intersect[0:len(intersect_array_0)] = intersect_array_0
-        new_intersect[len(intersect_array_0)] = 1
+    limit_sample = 2000
+    if np.sum(intersect_array_0) >= 1:
+        carrier_indices = np.nonzero(new_intersect)
+        print(carrier_indices)
+        pad_idcs = np.array(bonds)[carrier_indices]
+        perm_list = list(permutations(pad_idcs, len(pad_idcs)))
+        size_perm = len(perm_list)
+        if size_perm > limit_sample:
+            random_slices = np.array(np.random.choice(size_perm, limit_sample, replace = False))
+            perm_list = np.array(perm_list, dtype = object)[random_slices]
 
-        limit_sample = 100000
-        if np.sum(intersect_array_0) >= 1:
+        matrices = [mini_intersection(np.array([carrier_indices[0], perm_list[i]]).T) for i in tqdm(range(len(perm_list)))]
+        cost = [np.sum(m) for m in matrices]
+        min_permute = perm_list[np.argmin(cost)]
+        for i in range(len(carrier_indices[0])):
+            idx = carrier_indices[0][i]
+            bonds[idx] = min_permute[i]
+        save_snapshot(bonds, bo, plot_count, make_image = make_image)
+        plot_count += 1 
+
+bonds = np.array(bonds)
+
+imatrix = intersection_matrix(bonds)
+print("Number of Crossings", np.sum(imatrix))
+
+new_sum =  np.sum(imatrix)
+old_sum = 1000000
+
+print("Number of Crossings", old_sum)
+iter = 0
+while (new_sum>0 and iter<40):
+    iter+=1
+    old_sum = new_sum
+    for k in range(48):
+        i_array = imatrix[k]
+        new_intersect = np.copy(i_array)
+        new_intersect[k] = 1
+        if np.sum(i_array) >= 1:
             carrier_indices = np.nonzero(new_intersect)
-            print(carrier_indices)
+            #print(carrier_indices)
             pad_idcs = np.array(bonds)[carrier_indices]
-            perm_list = list(permutations(pad_idcs, len(pad_idcs)))
+            perm_list = np.array(list(permutations(pad_idcs, len(pad_idcs))), dtype = int)
             size_perm = len(perm_list)
+            #print(size_perm)
             if size_perm > limit_sample:
                 random_slices = np.array(np.random.choice(size_perm, limit_sample, replace = False))
                 perm_list = np.array(perm_list, dtype = object)[random_slices]
-
             matrices = [mini_intersection(np.array([carrier_indices[0], perm_list[i]]).T) for i in tqdm(range(len(perm_list)))]
+            
             cost = [np.sum(m) for m in matrices]
             min_permute = perm_list[np.argmin(cost)]
             for i in range(len(carrier_indices[0])):
                 idx = carrier_indices[0][i]
                 bonds[idx] = min_permute[i]
+            save_snapshot(bonds, bo, plot_count, make_image = make_image)
+            plot_count += 1 
+    imatrix= intersection_matrix(bonds.astype(int))
+    new_sum = np.sum(imatrix)
+    print(new_sum)
+    
+print(" ")
 
-    imatrix = intersection_matrix(bonds)
-    print("Number of Crossings", np.sum(imatrix))
-    out_bonds.append(bonds)
-    num_crossings.append(np.sum(imatrix))
-np.savetxt("bonds_simulation_saved.txt", np.array(out_bonds))
-
+for k in range(10):
+    save_snapshot(bonds, bo, plot_count, make_image = make_image)
+    plot_count += 1 
 
 for k in range(nmax):
     plt.plot([bo.xcenter[k], bo.pad_x[bonds[k]]], [bo.ycenter[k], bo.pad_y[bonds[k]]], color = 'k', linewidth = 0.2)
