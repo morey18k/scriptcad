@@ -5,6 +5,8 @@ from numpy.random import permutation
 from itertools import permutations
 import klayout.db as db
 from tqdm import tqdm
+import svgutils.transform as sg
+import gdspy
 
 class BondPlanInit():
     pad_x = []
@@ -17,6 +19,70 @@ class BondPlanInit():
     height =[]
     anchorx  = []
     anchory = []
+    plannumbers = []
+    linenumbers = []
+    bond_svg = "bonds.svg"
+    design_svg = "render.svg"
+    design_gds = "render.gds"
+    bonded_gds = "render_bonded.gds"
+    qboard_plan_svg = 'qboard_fullplan.svg'
+    cell_number = 0
+
+
+def write_bondsvg(bonds, bo, name, numbers = False):
+    fig, ax = plt.subplots()
+
+    rect = patches.Rectangle((-3400, -3150), 6800, 6300, linewidth=0.5, edgecolor='k', facecolor='none')
+    ax.add_patch(rect)
+    ax.set_xlim(-4500, 4500)
+    ax.set_ylim(-4500, 4500)
+    ax.set_aspect('equal')
+    ax.set_axis_off()
+
+    for k in range(len(bonds)):
+        ax.plot([bo.xcenter[k], bo.pad_x[bonds[k]]], [bo.ycenter[k], bo.pad_y[bonds[k]]], color = 'k', linewidth = 0.5)
+        #ax.text(bo.anchorx[k], bo.anchory[k], bo.linenumbers[k], fontsize = 5)
+    
+    fig.savefig(bo.bond_svg, transparent = True)
+    plt.close(fig)
+
+    render_gds = gdspy.GdsLibrary(infile=bo.design_gds)
+    cell = render_gds.top_level()[bo.cell_number]
+    size= 70
+    numbers = True
+    if numbers == True:
+        for k in range(nmax):
+            cell.add(gdspy.Text(f'{bo.linenumbers[k]}', size, (bo.pad_x[bonds[k]]-0.6*size, bo.pad_y[bonds[k]]-0.6*size), layer = 1000, datatype = 0))
+            render_gds.write_gds(bo.bonded_gds)
+    cell.write_svg(bo.design_svg, background = None)
+
+
+    #create new SVG figure
+    figure = sg.SVGFigure()
+
+    # load matpotlib-generated figures
+    fig2 = sg.fromfile(bo.bond_svg)
+    fig0 = sg.fromfile(bo.design_svg)
+    fig1 = sg.fromfile(bo.qboard_plan_svg)
+
+    # get the plot objects
+
+    plot1 = fig1.getroot()
+    plot0 = fig0.getroot()
+    plot2 = fig2.getroot()
+
+
+    plot2.scale(1.6926801678887884, 1.7020312884815127)
+    plot0.scale(341.181/68000, 317.903/63000)
+
+    plot2.moveto(103.672-229.785 + 0.63, 329.998-137.721-0.4)
+    plot0.moveto(103.672+170.593-0.0035, 329.998+158.954)
+
+    # append plots and labels to figure
+    figure.append([plot1, plot0, plot2])
+
+    # save generated SVG files
+    figure.save(name)
 
 
 def save_snapshot(bonds, bo, num, make_image = False):
@@ -297,6 +363,11 @@ ordering = [12, 43, 44, 45, 13, 46, 17, 14, 15, 16, 18, 47, 2,
          7, 41, 10, 8, 9, 40, 11, 42, 3, 28, 29, 30, 4, 34, 35, 
          31, 32, 33, 5, 36]
 
+bo.plannumbers = [7, 9, 8, 11, 10, 13, 12, 15, 14, 16, 17, 18, 19,
+               20, 21, 23, 22, 24, 27, 28, 29, 30, 31, 32, 33, 35, 
+               34, 37, 36, 39, 38, 41, 40, 42, 43, 44, 45, 47, 46, 
+               49, 48, 50, 1, 2, 3, 4, 5, 6]
+bo.linenumbers = [number if number<25 else number-2 for number in bo.plannumbers]
 
 rolling = 0
 make_image = False
@@ -308,7 +379,7 @@ bigrectsize = np.array([340.59167, 317.31366])
 bigrectcenter = np.array([235.427007, 213.822003])
 
 bo.xcenter = 6800*(np.array([element[1][0] for element in bo.rect_centers])[order]-bigrectcenter[0])/bigrectsize[0]
-bo.ycenter = 6300*(np.array([element[1][1] for element in bo.rect_centers])[order]-bigrectcenter[1])/bigrectsize[1]
+bo.ycenter = -6300*(np.array([element[1][1] for element in bo.rect_centers])[order]-bigrectcenter[1])/bigrectsize[1]
 
 
 bo.width = (6800/bigrectsize[0])*np.array([element[1][0] for element in bo.rect_sizes])[order]
@@ -468,5 +539,7 @@ for k in range(10):
 for k in range(nmax):
     plt.plot([bo.xcenter[k], bo.pad_x[bonds[k]]], [bo.ycenter[k], bo.pad_y[bonds[k]]], color = 'k', linewidth = 0.2)
 
-plt.show()
+write_bondsvg(bonds, bo, "final_plan.svg", numbers = True)
+
+
 
